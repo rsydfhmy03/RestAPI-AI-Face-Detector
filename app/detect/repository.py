@@ -54,27 +54,39 @@ class OriginalDetectRepository(BaseRepository):
     #         }
     #     }
     def predict(self, image_bytes: bytes, use_lbp: bool = False):
-    # Convert Bytes ke array (tanpa convert RGB)
-        image = Image.open(BytesIO(image_bytes))
-        image_np = np.array(image)
-        image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)  # Samakan ke BGR
+        import cv2
+        from PIL import Image
+        import numpy as np
+        from io import BytesIO
 
+        # Load image dari bytes (tanpa ubah channel)
+        image = Image.open(BytesIO(image_bytes)).convert("RGB")  # Tetap RGB
+        image_np = np.array(image)
+
+        # Convert ke BGR karena Colab pakai cv2.imread()
+        image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+
+        # Resize dan buat batch
         img_resized = cv2.resize(image_bgr, (224, 224))
-        input_tensor = np.expand_dims(img_resized, axis=0)  # shape (1, 224, 224, 3)
-        self.class_names = ['FAKE', 'REAL'] 
+        input_tensor = np.expand_dims(img_resized, axis=0)  # shape: (1, 224, 224, 3)
+
+        # PENTING: samakan label dan normalisasi seperti Colab
+        self.class_names = ['FAKE', 'REAL']
+
         prediction = self.model.predict(input_tensor, verbose=0)[0]
         pred_class = np.argmax(prediction)
         label = self.class_names[pred_class]
-        confidence = float(prediction[pred_class])
-        
+        confidence = float(round(prediction[pred_class], 2))
+
         return {
             "label": label,
-            "confidence": round(confidence, 4),
+            "confidence": confidence,
             "probabilities": {
-                self.class_names[0]: float(prediction[0]),
-                self.class_names[1]: float(prediction[1])
+                self.class_names[0]: float(round(prediction[0], 2)),
+                self.class_names[1]: float(round(prediction[1], 2)),
             }
         }
+
 
 
 
