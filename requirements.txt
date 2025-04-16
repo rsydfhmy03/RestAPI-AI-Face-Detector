@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+opencv-python-headless
+numpy
+tensorflow>=2.10.0
+scikit-image
+pillow
+gunicorn==20.0.4
+uvloop==0.15.2
+httptools==0.1.1
