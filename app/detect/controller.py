@@ -9,15 +9,15 @@ lbp_service = LBPDetectService()
 async def detect_cnn_original(file: UploadFile) -> ResponseModel:
     result = await original_service.detect(file)
     return ResponseModel(
-        data=result,
         statusCode=201,
-        message="Human Face Detected using Original CNN Model"
+        message="Human Face Detected using Original CNN Model",
+        data=result,
     )
 
 async def detect_lbp(file: UploadFile) -> ResponseModel:
     result = await lbp_service.detect(file)
     return ResponseModel(
-        data=result,
         statusCode=201,
-        message="Human Face Detected using LBP + CNN Model"
+        message="Human Face Detected using LBP + CNN Model",
+        data=result,
     )
