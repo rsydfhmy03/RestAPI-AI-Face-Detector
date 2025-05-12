@@ -12,11 +12,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Debug Secret (sementara)
-      run: |
-        echo "${{ secrets.GCP_CREDENTIALS }}" | jq .
-        echo "${{ secrets.GCP_PROJECT }}"
-
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
