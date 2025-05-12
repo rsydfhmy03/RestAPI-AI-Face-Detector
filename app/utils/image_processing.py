@@ -3,7 +3,7 @@ import numpy as np
 from app.config import Config
 
 def detect_and_crop_face(image: np.ndarray) -> np.ndarray | None:
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     face_cascade = cv2.CascadeClassifier(Config.HAARCASCADE_PATH)
 
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
