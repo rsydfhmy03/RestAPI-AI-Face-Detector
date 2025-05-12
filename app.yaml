@@ -1,3 +1,8 @@
-runtime: python39  # Sesuaikan dengan versi Python Anda (37, 38, 39, dll)
-entrypoint: gunicorn -w 1 -k uvicorn.workers.UvicornWorker main:app
+runtime: python310
 
+entrypoint: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+
+handlers:
+- url: /.*
+  script: auto
