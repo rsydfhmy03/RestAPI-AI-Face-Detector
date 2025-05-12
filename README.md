@@ -1,6 +1,3 @@
-Here's a professional README.md for your GANSDOCTOR API project:
-
-```markdown
 # GANSDOCTOR API
 
 ![GANSDOCTOR Logo](https://storage.googleapis.com/gansdoctor_skripsi/Logo%20GansDoctor.png) 
@@ -9,7 +6,7 @@ A Deep Learning-based API for detecting AI-generated faces using TensorFlow and 
 
 ## 🔍 Overview
 
-GANSDOCTOR is a powerful API that analyzes facial images to determine whether they are AI-generated or real. This solution leverages deep learning models to provide accurate detection of synthetic faces produced by GANs (Generative Adversarial Networks).
+GANSDOCTOR API is a powerful API that analyzes facial images to determine whether they are AI-generated or real. This solution leverages deep learning models to provide accurate detection of synthetic faces produced by GANs (Generative Adversarial Networks).
 
 ## 🚀 Features
 
