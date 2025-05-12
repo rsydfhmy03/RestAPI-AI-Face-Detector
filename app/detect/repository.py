@@ -13,7 +13,7 @@ class OriginalDetectRepository(BaseRepository):
         self.model = self.load_model()  # panggil abstract method yang kita override
 
     def load_model(self):  # ini override abstract method BaseRepository
-        return load_model(Config.MODEL_ORI_PATH)
+        return load_model(Config.MODEL_ORI_PATH, compile=False)
     
     def predict(self, image_bytes: bytes, use_lbp: bool = False):
         import cv2
@@ -60,4 +60,4 @@ class OriginalDetectRepository(BaseRepository):
 
 class LBPDetectRepository(OriginalDetectRepository):
     def load_model(self):  # override method dari parent
-        return load_model(Config.MODEL_LBP_PATH)
+        return load_model(Config.MODEL_LBP_PATH, compile=False)
