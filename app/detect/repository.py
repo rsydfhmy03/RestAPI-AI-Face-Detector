@@ -7,7 +7,8 @@ from app.base.repository import BaseRepository
 from app.utils.image_processing import detect_and_crop_face
 from app.utils.lbp import apply_lbp
 from app.config import Config
-
+from app.utils.storage import upload_to_gcs
+import uuid
 class OriginalDetectRepository(BaseRepository):
     def __init__(self):
         self.model = self.load_model()  # panggil abstract method yang kita override
@@ -41,6 +42,13 @@ class OriginalDetectRepository(BaseRepository):
         img_resized = cv2.resize(cropped_face, (224, 224))
         input_tensor = np.expand_dims(img_resized, axis=0)  # shape: (1, 224, 224, 3)
 
+        _, buffer = cv2.imencode('.jpg', img_resized)
+        img_bytes = buffer.tobytes()
+        # Upload ke GCS
+        image_id = str(uuid.uuid4())
+        bucket_name = Config.GCS_BUCKET_NAME
+        gcs_url = upload_to_gcs(bucket_name, img_bytes, f"results/{image_id}.jpg")
+
         self.class_names = ['FAKE', 'REAL']
 
         prediction = self.model.predict(input_tensor, verbose=0)[0]
@@ -51,6 +59,7 @@ class OriginalDetectRepository(BaseRepository):
         return {
             "label": label,
             "confidence": confidence,
+            "image_url": gcs_url,
             "probabilities": {
                 self.class_names[0]: float(round(prediction[0], 2)),
                 self.class_names[1]: float(round(prediction[1], 2)),
