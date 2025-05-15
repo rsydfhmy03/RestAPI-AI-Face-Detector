@@ -33,7 +33,14 @@ def register_exception_handlers(app):
         error_detail = str(exc)
         stack_trace = traceback.format_exc()
         print(f"Error: {error_detail}\nStack Trace: {stack_trace}")
+        
         return JSONResponse(
             status_code=500,
-            content={"message": "Internal server error", "error": error_detail}
+            content={
+                "statusCode": 500,
+                "message": "Internal server error",
+                "data": {
+                    "error": error_detail
+                }
+            }
         )
