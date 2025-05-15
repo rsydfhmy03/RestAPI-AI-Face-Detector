@@ -41,13 +41,18 @@ class OriginalDetectRepository(BaseRepository):
         # Resize dan buat batch
         img_resized = cv2.resize(cropped_face, (224, 224))
         input_tensor = np.expand_dims(img_resized, axis=0)  # shape: (1, 224, 224, 3)
-
-        _, buffer = cv2.imencode('.jpg', img_resized)
+        print(f"input_tensor shape: {input_tensor.shape}")
+        print(f"image resized: {img_resized.shape}")
+        # ----------------------
+        # Simpan ke GCS
+        img_gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
+        _, buffer = cv2.imencode('.jpg', img_gray)
         img_bytes = buffer.tobytes()
-        # Upload ke GCS
+
         image_id = str(uuid.uuid4())
         bucket_name = Config.GCS_BUCKET_NAME
         gcs_url = upload_to_gcs(bucket_name, img_bytes, f"results/{image_id}.jpg")
+        # ----------------------
 
         self.class_names = ['FAKE', 'REAL']
 
