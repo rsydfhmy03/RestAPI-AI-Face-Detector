@@ -9,51 +9,68 @@ from app.utils.lbp import apply_lbp
 from app.config import Config
 from app.utils.storage import upload_to_gcs
 import uuid
+
+# Helper function for image processing
+def preprocess_image(image_bytes: bytes, use_lbp: bool = False):
+    """Process image for face detection and resizing"""
+    # Load image from bytes
+    image = Image.open(BytesIO(image_bytes)).convert("RGB")
+    image_np = np.array(image)
+
+    # Convert to BGR for OpenCV
+    image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+
+    # Detect and crop face
+    cropped_face = detect_and_crop_face(image_bgr)
+    if cropped_face is None:
+        return None
+
+    # Apply LBP if needed
+    if use_lbp:
+        cropped_face = apply_lbp(cropped_face)
+        cropped_face = cv2.cvtColor(cropped_face, cv2.COLOR_GRAY2BGR)
+
+    # Resize image and prepare for prediction
+    img_resized = cv2.resize(cropped_face, (224, 224))
+    return img_resized
+
+# Helper function to upload image to GCS
+def save_image_to_gcs(image_bytes: bytes):
+    """Save image to GCS and return the URL"""
+    image_id = str(uuid.uuid4())
+    bucket_name = Config.GCS_BUCKET_NAME
+    gcs_url = upload_to_gcs(bucket_name, image_bytes, f"results/{image_id}.jpg")
+    return gcs_url
+
 class OriginalDetectRepository(BaseRepository):
     def __init__(self):
-        self.model = self.load_model()  # panggil abstract method yang kita override
+        self.model = self.load_model()  # Call overridden abstract method
 
-    def load_model(self):  # ini override abstract method BaseRepository
+    def load_model(self):
         return load_model(Config.MODEL_ORI_PATH, compile=False)
     
     def predict(self, image_bytes: bytes, use_lbp: bool = False):
-        import cv2
-        from PIL import Image
-        import numpy as np
-        from io import BytesIO
-
-        # Load image dari bytes (tanpa ubah channel)
-        image = Image.open(BytesIO(image_bytes)).convert("RGB")  # Tetap RGB
-        image_np = np.array(image)
-
-        # Convert ke BGR karena Colab pakai cv2.imread()
-        image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-
-        # Cek wajah dan crop
-        cropped_face = detect_and_crop_face(image_bgr)
-        if cropped_face is None:
+        # Preprocess image
+        img_resized = preprocess_image(image_bytes, use_lbp)
+        if img_resized is None:
             return None
-        
-        if use_lbp:
-            cropped_face = apply_lbp(cropped_face)
-            cropped_face = cv2.cvtColor(cropped_face, cv2.COLOR_GRAY2BGR)
-            
-        # Resize dan buat batch
-        img_resized = cv2.resize(cropped_face, (224, 224))
+
+        # Convert to tensor
         input_tensor = np.expand_dims(img_resized, axis=0)  # shape: (1, 224, 224, 3)
-
-        _, buffer = cv2.imencode('.jpg', img_resized)
+        
+        # Save image to GCS
+        img_gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
+        _, buffer = cv2.imencode('.jpg', img_gray)
         img_bytes = buffer.tobytes()
-        # Upload ke GCS
-        image_id = str(uuid.uuid4())
-        bucket_name = Config.GCS_BUCKET_NAME
-        gcs_url = upload_to_gcs(bucket_name, img_bytes, f"results/{image_id}.jpg")
+        gcs_url = save_image_to_gcs(img_bytes)
 
-        self.class_names = ['FAKE', 'REAL']
+        # Class names for prediction
+        class_names = ['FAKE', 'REAL']
 
+        # Make prediction
         prediction = self.model.predict(input_tensor, verbose=0)[0]
         pred_class = np.argmax(prediction)
-        label = self.class_names[pred_class]
+        label = class_names[pred_class]
         confidence = float(round(prediction[pred_class], 2))
 
         return {
@@ -61,12 +78,11 @@ class OriginalDetectRepository(BaseRepository):
             "confidence": confidence,
             "image_url": gcs_url,
             "probabilities": {
-                self.class_names[0]: float(round(prediction[0], 2)),
-                self.class_names[1]: float(round(prediction[1], 2)),
+                class_names[0]: float(round(prediction[0], 2)),
+                class_names[1]: float(round(prediction[1], 2)),
             }
         }
 
-
 class LBPDetectRepository(OriginalDetectRepository):
-    def load_model(self):  # override method dari parent
+    def load_model(self):
         return load_model(Config.MODEL_LBP_PATH, compile=False)
